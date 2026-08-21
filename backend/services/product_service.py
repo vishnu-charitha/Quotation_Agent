@@ -8,6 +8,11 @@ def search_laptops(
     quantity=None,
     max_budget=None
 ):
+    """
+    Search laptops based on specifications,
+    quantity, budget, and availability.
+    """
+
     laptops = load_laptops()
 
     matching_laptops = []
@@ -54,3 +59,17 @@ def search_laptops(
             matching_laptops.append(laptop)
 
     return matching_laptops
+
+
+def rank_laptops(laptops):
+    """
+    Rank laptops based on supplier price.
+    Lower supplier price gets higher priority.
+    """
+
+    ranked_laptops = sorted(
+        laptops,
+        key=lambda laptop: float(laptop["supplier_price"])
+    )
+
+    return ranked_laptops
