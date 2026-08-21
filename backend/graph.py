@@ -10,6 +10,7 @@ from backend.nodes.approval_node import approval_node
 
 from backend.nodes.auto_approval_node import auto_approval_node
 from backend.nodes.manual_approval_node import manual_approval_node
+from backend.nodes.pdf_node import pdf_node
 
 
 def approval_decision(state):
@@ -74,6 +75,10 @@ def create_quotation_graph():
         "manual_approval",
         manual_approval_node
     )
+    workflow.add_node(
+    "pdf_generation",
+    pdf_node
+)
 
     # START → Requirements
     workflow.add_edge(
@@ -117,9 +122,14 @@ def create_quotation_graph():
 
     # End both paths
     workflow.add_edge(
-        "auto_approve",
-        END
-    )
+    "auto_approve",
+    "pdf_generation"
+)
+
+    workflow.add_edge(
+    "pdf_generation",
+    END
+)
 
     workflow.add_edge(
         "manual_approval",
