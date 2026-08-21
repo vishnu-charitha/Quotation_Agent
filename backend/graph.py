@@ -7,7 +7,6 @@ from backend.nodes.product_search_node import product_search_node
 from backend.nodes.pricing_node import pricing_node
 from backend.nodes.quotation_node import quotation_node
 from backend.nodes.approval_node import approval_node
-
 from backend.nodes.auto_approval_node import auto_approval_node
 from backend.nodes.manual_approval_node import manual_approval_node
 from backend.nodes.pdf_node import pdf_node
@@ -17,30 +16,20 @@ def approval_decision(state):
 
     print("\n--- APPROVAL DECISION ---")
 
-    pricing_details = state["pricing_details"]
+    approval_status = state.get("approval_status")
 
-    final_total = pricing_details["final_total"]
-
-    print(f"Final Total: ₹{final_total}")
-
-    if final_total <= 1000000:
-
+    if approval_status == "approved":
         print("Decision: AUTO APPROVE")
+        return "auto_approval"
 
-        return "auto_approve"
-
-    else:
-
-        print("Decision: MANUAL APPROVAL")
-
-        return "manual_approve"
+    print("Decision: MANUAL APPROVAL")
+    return "manual_approval"
 
 
 def create_quotation_graph():
 
     workflow = StateGraph(QuotationState)
 
-    # Add nodes
     workflow.add_node(
         "requirements",
         requirement_node
@@ -67,7 +56,7 @@ def create_quotation_graph():
     )
 
     workflow.add_node(
-        "auto_approve",
+        "auto_approval",
         auto_approval_node
     )
 
@@ -75,68 +64,59 @@ def create_quotation_graph():
         "manual_approval",
         manual_approval_node
     )
-    workflow.add_node(
-    "pdf_generation",
-    pdf_node
-)
 
-    # START → Requirements
+    workflow.add_node(
+        "pdf_generation",
+        pdf_node
+    )
+
     workflow.add_edge(
         START,
         "requirements"
     )
 
-    # Requirements → Product Search
     workflow.add_edge(
         "requirements",
         "product_search"
     )
 
-    # Product Search → Pricing
     workflow.add_edge(
         "product_search",
         "pricing"
     )
 
-    # Pricing → Quotation
     workflow.add_edge(
         "pricing",
         "quotation"
     )
 
-    # Quotation → Approval
     workflow.add_edge(
         "quotation",
         "approval"
     )
 
-    # Conditional routing
     workflow.add_conditional_edges(
         "approval",
         approval_decision,
         {
-            "auto_approve": "auto_approve",
-            "manual_approve": "manual_approval"
+            "auto_approval": "auto_approval",
+            "manual_approval": "manual_approval"
         }
     )
 
-    # End both paths
     workflow.add_edge(
-    "auto_approve",
-    "pdf_generation"
-)
-
-    workflow.add_edge(
-    "pdf_generation",
-    END
-)
+        "auto_approval",
+        "pdf_generation"
+    )
 
     workflow.add_edge(
         "manual_approval",
+        "pdf_generation"
+    )
+
+    workflow.add_edge(
+        "pdf_generation",
         END
     )
 
-    # Compile graph
-    graph = workflow.compile()
-
-    return graph
+    return workflow.compile()

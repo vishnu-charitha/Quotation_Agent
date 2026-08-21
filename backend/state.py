@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, List, Dict, Any
+from typing import TypedDict, Dict, Any, Optional
 
 
 class QuotationState(TypedDict, total=False):
@@ -7,14 +7,12 @@ class QuotationState(TypedDict, total=False):
 
     requirements: Dict[str, Any]
 
-    matching_products: List[Dict[str, Any]]
+    selected_product: Dict[str, Any]
 
-    ranked_products: List[Dict[str, Any]]
+    pricing_details: Dict[str, Any]
 
-    selected_product: Optional[Dict[str, Any]]
+    quotation: Dict[str, Any]
 
-    pricing_details: Optional[Dict[str, Any]]
+    approval_status: str
 
-    quotation: Optional[Dict[str, Any]]
-
-    approval_status: Optional[str]
+    pdf_path: Optional[str]

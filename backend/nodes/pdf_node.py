@@ -7,11 +7,15 @@ def pdf_node(state):
 
     quotation = state["quotation"]
 
+    pricing_details = state["pricing_details"]
+
     pdf_path = generate_quotation_pdf(
-        quotation
+        quotation,
+        pricing_details
     )
 
-    print(f"\nPDF Generated Successfully:")
+    print("\nPDF Generated Successfully:")
+
     print(pdf_path)
 
     return {

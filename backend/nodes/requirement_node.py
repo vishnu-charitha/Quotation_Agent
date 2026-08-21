@@ -2,10 +2,7 @@ def requirement_node(state):
 
     print("\n--- REQUIREMENT NODE ---")
 
-    requirements = state.get("requirements", {})
-
-    if not requirements:
-        raise ValueError("Requirements are missing from the workflow state")
+    requirements = state["requirements"]
 
     print("\nCustomer Requirements:")
 
@@ -13,5 +10,6 @@ def requirement_node(state):
         print(f"{key}: {value}")
 
     return {
+        "customer_name": state["customer_name"],
         "requirements": requirements
     }

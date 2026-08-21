@@ -5,8 +5,9 @@ def manual_approval_node(state):
     quotation = state["quotation"]
 
     print(
-        f"Quotation {quotation['quotation_number']} "
-        "requires manual approval."
+        f"Quotation "
+        f"{quotation['quotation_number']} "
+        f"requires manual approval."
     )
 
     return {

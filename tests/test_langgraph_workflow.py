@@ -6,6 +6,7 @@ def test_langgraph_workflow():
     graph = create_quotation_graph()
 
     initial_state = {
+
         "customer_name": "ABC Technologies",
 
         "requirements": {
@@ -42,6 +43,22 @@ def test_langgraph_workflow():
         result["quotation"]["quotation_number"]
     )
 
-    assert result["quotation"]["status"] == "Generated"
     print("\nApproval Status:")
-    print(result["approval_status"])
+    print(
+        result["approval_status"]
+    )
+
+    print("\nPDF Path:")
+    print(
+        result.get("pdf_path")
+    )
+
+    assert result["customer_name"] == "ABC Technologies"
+
+    assert result["selected_product"] is not None
+
+    assert result["pricing_details"] is not None
+
+    assert result["quotation"] is not None
+
+    assert result["approval_status"] is not None

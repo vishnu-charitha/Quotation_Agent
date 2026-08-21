@@ -1,4 +1,4 @@
-from backend.services.pricing_service import calculate_price
+from backend.tools.price_calculator import calculate_price
 
 
 def pricing_node(state):
@@ -6,22 +6,21 @@ def pricing_node(state):
     print("\n--- PRICING NODE ---")
 
     selected_product = state["selected_product"]
+
     requirements = state["requirements"]
 
     quantity = requirements["quantity"]
 
-    pricing = calculate_price(
-        supplier_price=selected_product["supplier_price"],
-        quantity=quantity,
-        profit_margin=10,
-        gst_rate=18
+    pricing_details = calculate_price(
+        selected_product["price"],
+        quantity
     )
 
     print("\nPricing Details:")
 
-    for key, value in pricing.items():
+    for key, value in pricing_details.items():
         print(f"{key}: {value}")
 
     return {
-        "pricing_details": pricing
+        "pricing_details": pricing_details
     }
