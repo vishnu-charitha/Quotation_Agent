@@ -1,0 +1,7 @@
+product_id,category,brand,model,processor,ram,storage,display,operating_system,supplier,supplier_price,market_price,warranty,availability,available_quantity
+L001,Laptop,Dell,Latitude 3550,Intel Core i5,16GB,512GB SSD,15.6 inch,Windows 11,Tech Supplier A,58000,62000,3 Years,In Stock,25
+L002,Laptop,Lenovo,ThinkPad E14,Intel Core i5,16GB,512GB SSD,14 inch,Windows 11,Tech Supplier B,57000,61000,3 Years,In Stock,20
+L003,Laptop,HP,ProBook 450,Intel Core i5,16GB,512GB SSD,15.6 inch,Windows 11,Tech Supplier C,59500,63000,3 Years,In Stock,10
+L004,Laptop,Dell,Inspiron 15,Intel Core i7,16GB,512GB SSD,15.6 inch,Windows 11,Tech Supplier A,68000,72000,1 Year,In Stock,15
+L005,Laptop,Lenovo,IdeaPad Slim 5,Intel Core i5,8GB,512GB SSD,15.6 inch,Windows 11,Tech Supplier B,50000,54000,1 Year,In Stock,30
+L006,Laptop,HP,Pavilion 14,Intel Core i7,16GB,1TB SSD,14 inch,Windows 11,Tech Supplier C,75000,80000,1 Year,In Stock,12
