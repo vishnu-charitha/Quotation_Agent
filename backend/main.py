@@ -1,16 +1,28 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from backend.graph import create_quotation_graph
+from backend.agent import quotation_agent
 
+
+# =========================================================
+# CREATE FASTAPI APP
+# =========================================================
 
 app = FastAPI(
     title="Quotation Agent API",
-    version="1.0.0"
+    version="1.0.0",
+    description="AI-powered quotation generation using LangGraph and RAG"
 )
 
 
-class QuotationRequest(BaseModel):
+# =========================================================
+# REQUEST MODELS
+# =========================================================
+
+class QuotationRequest(
+    BaseModel
+):
+
     customer_name: str
     processor: str
     ram: str
@@ -19,46 +31,242 @@ class QuotationRequest(BaseModel):
     max_budget: float
 
 
+class AgentRequest(
+    BaseModel
+):
+
+    query: str
+
+
+# =========================================================
+# HOME ROUTE
+# =========================================================
+
 @app.get("/")
 def home():
+
     return {
-        "message": "Quotation Agent API is running successfully"
+        "message": "Quotation Agent API is running"
     }
 
 
+# =========================================================
+# GENERATE QUOTATION
+# =========================================================
+
 @app.post("/generate-quotation")
-def generate_quotation(request: QuotationRequest):
+def generate_quotation(
+    request: QuotationRequest
+):
 
     try:
 
-        # Create graph
-        graph = create_quotation_graph()
+        # -------------------------------------------------
+        # SAMPLE PRODUCT DATA
+        # -------------------------------------------------
 
-        # Initial state
-        initial_state = {
-            "customer_name": request.customer_name,
-            "requirements": {
-                "processor": request.processor,
-                "ram": request.ram,
-                "storage": request.storage,
-                "quantity": request.quantity,
-                "max_budget": request.max_budget
-            }
+        product = {
+            "supplier": "Dell Technologies",
+            "product": "Dell Inspiron 15",
+            "processor": "Intel Core i5",
+            "ram": "16GB",
+            "storage": "512GB SSD",
+            "price": 55000,
+            "price_per_unit": 55000,
+            "warranty": "2 Years",
+            "availability": "In Stock"
         }
 
-        # Run graph
-        result = graph.invoke(initial_state)
+
+        # -------------------------------------------------
+        # CALCULATE PRICE
+        # -------------------------------------------------
+
+        price_per_unit = product["price"]
+
+        total_price = (
+            price_per_unit
+            * request.quantity
+        )
+
+
+        # -------------------------------------------------
+        # CHECK BUDGET
+        # -------------------------------------------------
+
+        if total_price <= request.max_budget:
+
+            approval_status = "APPROVED"
+
+        else:
+
+            approval_status = "REJECTED"
+
+
+        # -------------------------------------------------
+        # CREATE QUOTATION
+        # -------------------------------------------------
+
+        quotation = f"""
+========================================
+             QUOTATION
+========================================
+
+Customer Name: {request.customer_name}
+
+----------------------------------------
+PRODUCT DETAILS
+----------------------------------------
+
+Supplier: {product["supplier"]}
+
+Product: {product["product"]}
+
+Processor: {product["processor"]}
+
+RAM: {product["ram"]}
+
+Storage: {product["storage"]}
+
+Warranty: {product["warranty"]}
+
+Availability: {product["availability"]}
+
+
+----------------------------------------
+PRICING DETAILS
+----------------------------------------
+
+Price Per Unit: ₹{price_per_unit}
+
+Quantity: {request.quantity}
+
+Total Price: ₹{total_price}
+
+Maximum Budget: ₹{request.max_budget}
+
+
+----------------------------------------
+STATUS
+----------------------------------------
+
+Approval Status: {approval_status}
+
+========================================
+
+Thank you for choosing our services.
+"""
+
 
         return {
-            "customer_name": result.get("customer_name"),
-            "selected_product": result.get("selected_product"),
-            "pricing_details": result.get("pricing_details"),
-            "quotation": result.get("quotation"),
-            "approval_status": result.get("approval_status"),
-            "pdf_path": result.get("pdf_path")
+
+            "customer_name":
+                request.customer_name,
+
+            "selected_product":
+                product,
+
+            "pricing_details": {
+
+                "price_per_unit":
+                    price_per_unit,
+
+                "quantity":
+                    request.quantity,
+
+                "total_price":
+                    total_price,
+
+                "max_budget":
+                    request.max_budget
+            },
+
+            "quotation":
+                quotation,
+
+            "approval_status":
+                approval_status
         }
 
+
     except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+
+# =========================================================
+# AGENT QUOTATION
+# =========================================================
+
+@app.post("/agent-quotation")
+def agent_quotation(
+    request: AgentRequest
+):
+
+    try:
+
+        print("\n=================================")
+        print("AGENT RECEIVED QUERY")
+        print("=================================\n")
+
+        print(request.query)
+
+
+        # -----------------------------------------------
+        # RUN LANGGRAPH
+        # -----------------------------------------------
+
+        result = quotation_graph.invoke(
+            {
+                "query":
+                    request.query,
+
+                "documents":
+                    [],
+
+                "context":
+                    "",
+
+                "answer":
+                    ""
+            }
+        )
+
+
+        # -----------------------------------------------
+        # RETURN RESPONSE
+        # -----------------------------------------------
+
+        return {
+
+            "query":
+                request.query,
+
+            "response":
+                result.get(
+                    "answer",
+                    "No response generated."
+                ),
+
+            "retrieved_documents":
+                len(
+                    result.get(
+                        "documents",
+                        []
+                    )
+                )
+        }
+
+
+    except Exception as e:
+
+        print(
+            "\nAGENT ERROR:",
+            str(e)
+        )
 
         raise HTTPException(
             status_code=500,

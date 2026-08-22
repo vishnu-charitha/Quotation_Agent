@@ -1,0 +1,28 @@
+PRICING POLICY
+
+The default profit margin for quotations is 10 percent.
+
+GST is calculated at 18 percent.
+
+Quotation Calculation:
+
+Base Amount = Supplier Price Per Unit × Quantity
+
+Profit Amount = Base Amount × Profit Margin / 100
+
+Amount After Profit = Base Amount + Profit Amount
+
+GST Amount = Amount After Profit × GST Rate / 100
+
+Final Quotation Amount = Amount After Profit + GST Amount
+
+The quotation should clearly show:
+
+Product Name
+Supplier
+Quantity
+Price Per Unit
+Base Amount
+Profit Margin
+GST
+Final Amount

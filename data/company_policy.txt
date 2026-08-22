@@ -1,0 +1,15 @@
+COMPANY QUOTATION POLICY
+
+The company provides laptop quotations based on customer requirements.
+
+The system should search available supplier products before preparing a quotation.
+
+The recommended product should match the requested processor, RAM and storage.
+
+The quotation should stay within the customer's maximum budget whenever possible.
+
+Products with longer warranty should be preferred when prices are similar.
+
+The final quotation should contain complete pricing details and supplier information.
+
+All prices are in Indian Rupees (INR).

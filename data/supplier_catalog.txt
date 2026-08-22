@@ -1,0 +1,46 @@
+SUPPLIER CATALOG
+
+Supplier: Dell Technologies
+Product: Dell Inspiron 15
+Processor: Intel Core i5
+RAM: 16GB
+Storage: 512GB SSD
+Price Per Unit: 55000
+Warranty: 2 Years
+Availability: In Stock
+
+Supplier: HP India
+Product: HP Pavilion 15
+Processor: Intel Core i5
+RAM: 16GB
+Storage: 512GB SSD
+Price Per Unit: 58000
+Warranty: 2 Years
+Availability: In Stock
+
+Supplier: Lenovo
+Product: Lenovo ThinkPad E14
+Processor: Intel Core i5
+RAM: 16GB
+Storage: 512GB SSD
+Price Per Unit: 60000
+Warranty: 3 Years
+Availability: In Stock
+
+Supplier: Acer
+Product: Acer Aspire 5
+Processor: Intel Core i5
+RAM: 8GB
+Storage: 512GB SSD
+Price Per Unit: 48000
+Warranty: 1 Year
+Availability: In Stock
+
+Supplier: ASUS
+Product: ASUS VivoBook
+Processor: Intel Core i7
+RAM: 16GB
+Storage: 1TB SSD
+Price Per Unit: 75000
+Warranty: 2 Years
+Availability: Limited Stock

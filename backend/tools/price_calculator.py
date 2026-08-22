@@ -1,11 +1,14 @@
-def calculate_price(
-    supplier_price_per_unit,
-    quantity,
-    profit_margin_percent=10,
-    gst_rate=18
-):
+from langchain_core.tools import tool
 
-    supplier_price_per_unit = float(supplier_price_per_unit)
+
+@tool
+def calculate_price(
+    supplier_price_per_unit: float,
+    quantity: int,
+    profit_margin_percent: float = 10,
+    gst_rate: float = 18
+):
+    """Calculate selling price, profit, GST and final quotation total."""
 
     profit_amount_per_unit = (
         supplier_price_per_unit
@@ -29,10 +32,7 @@ def calculate_price(
         / 100
     )
 
-    final_total = (
-        subtotal
-        + gst_amount
-    )
+    final_total = subtotal + gst_amount
 
     return {
         "supplier_price_per_unit": supplier_price_per_unit,

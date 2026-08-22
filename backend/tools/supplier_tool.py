@@ -9,15 +9,9 @@ def search_suppliers(processor, ram, storage):
             "processor": "Intel Core i5",
             "ram": "16GB",
             "storage": "512GB SSD",
-            "display": "15.6 inch",
-            "operating_system": "Windows 11",
             "supplier_price": 50000,
-            "market_price": 54000,
-            "warranty": "1 Year",
-            "availability": "In Stock",
-            "available_quantity": 30
+            "warranty": "1 Year"
         },
-
         {
             "product_id": "L002",
             "supplier": "Tech Supplier B",
@@ -26,15 +20,9 @@ def search_suppliers(processor, ram, storage):
             "processor": "Intel Core i5",
             "ram": "16GB",
             "storage": "512GB SSD",
-            "display": "15.6 inch",
-            "operating_system": "Windows 11",
             "supplier_price": 52000,
-            "market_price": 56000,
-            "warranty": "1 Year",
-            "availability": "In Stock",
-            "available_quantity": 20
+            "warranty": "1 Year"
         },
-
         {
             "product_id": "L003",
             "supplier": "Tech Supplier C",
@@ -43,13 +31,8 @@ def search_suppliers(processor, ram, storage):
             "processor": "Intel Core i5",
             "ram": "16GB",
             "storage": "512GB SSD",
-            "display": "15.6 inch",
-            "operating_system": "Windows 11",
             "supplier_price": 51000,
-            "market_price": 55000,
-            "warranty": "1 Year",
-            "availability": "In Stock",
-            "available_quantity": 25
+            "warranty": "1 Year"
         }
     ]
 
@@ -61,7 +44,6 @@ def search_suppliers(processor, ram, storage):
             processor.lower() in product["processor"].lower()
             and ram.lower() == product["ram"].lower()
             and storage.lower() == product["storage"].lower()
-            and product["availability"] == "In Stock"
         ):
             matching_products.append(product)
 

@@ -1,122 +1,295 @@
-from langgraph.graph import StateGraph, START, END
+import os
+from pathlib import Path
+from typing import TypedDict, List, Dict, Any
 
-from backend.state import QuotationState
+from dotenv import load_dotenv
 
-from backend.nodes.requirement_node import requirement_node
-from backend.nodes.product_search_node import product_search_node
-from backend.nodes.pricing_node import pricing_node
-from backend.nodes.quotation_node import quotation_node
-from backend.nodes.approval_node import approval_node
-from backend.nodes.auto_approval_node import auto_approval_node
-from backend.nodes.manual_approval_node import manual_approval_node
-from backend.nodes.pdf_node import pdf_node
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.graph import StateGraph, END
+
+from backend.rag.retriever import retrieve_documents
 
 
-def approval_decision(state):
+# =========================================================
+# LOAD ENVIRONMENT VARIABLES
+# =========================================================
 
-    print("\n--- APPROVAL DECISION ---")
+BASE_DIR = Path(__file__).resolve().parents[1]
 
-    approval_status = state.get("approval_status")
-
-    if approval_status == "approved":
-        print("Decision: AUTO APPROVE")
-        return "auto_approval"
-
-    print("Decision: MANUAL APPROVAL")
-    return "manual_approval"
+load_dotenv(BASE_DIR / ".env")
 
 
-def create_quotation_graph():
+# =========================================================
+# GEMINI CONFIGURATION
+# =========================================================
 
-    workflow = StateGraph(QuotationState)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-    workflow.add_node(
-        "requirements",
-        requirement_node
+if not GEMINI_API_KEY:
+    raise ValueError(
+        "GEMINI_API_KEY is missing in the .env file"
     )
 
-    workflow.add_node(
-        "product_search",
-        product_search_node
+
+# =========================================================
+# INITIALIZE GEMINI
+# =========================================================
+
+print("Initializing Gemini model...")
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash",
+    google_api_key=GEMINI_API_KEY,
+    temperature=0.2
+)
+
+
+# =========================================================
+# DEFINE GRAPH STATE
+# =========================================================
+
+class AgentState(TypedDict):
+
+    query: str
+
+    documents: List[Dict[str, Any]]
+
+    context: str
+
+    answer: str
+
+
+# =========================================================
+# NODE 1: RETRIEVE DOCUMENTS
+# =========================================================
+
+def retrieve_node(
+    state: AgentState
+):
+
+    print("\nRetrieving relevant documents...")
+
+    query = state["query"]
+
+    documents = retrieve_documents(
+        query=query,
+        limit=3
     )
 
-    workflow.add_node(
-        "pricing",
-        pricing_node
+    context_parts = []
+
+    for index, document in enumerate(
+        documents,
+        start=1
+    ):
+
+        content = document.get(
+            "content",
+            ""
+        )
+
+        score = document.get(
+            "score",
+            0
+        )
+
+        context_parts.append(
+            f"""
+DOCUMENT {index}
+
+Similarity Score: {score}
+
+Content:
+
+{content}
+"""
+        )
+
+    context = "\n\n".join(
+        context_parts
     )
 
-    workflow.add_node(
-        "quotation",
-        quotation_node
+    if not context.strip():
+
+        context = (
+            "No relevant product information "
+            "was found in the knowledge base."
+        )
+
+    return {
+        "documents": documents,
+        "context": context
+    }
+
+
+# =========================================================
+# NODE 2: GENERATE RESPONSE
+# =========================================================
+
+def generate_node(
+    state: AgentState
+):
+
+    print("\nSending request to Gemini...")
+
+    query = state["query"]
+
+    context = state["context"]
+
+    prompt = f"""
+You are an AI-powered quotation assistant.
+
+Your task is to generate a professional quotation
+based ONLY on the retrieved product information.
+
+Do not invent product names, suppliers, prices,
+specifications, warranty information, or availability.
+
+--------------------------------------------------
+
+CUSTOMER REQUIREMENT:
+
+{query}
+
+--------------------------------------------------
+
+RETRIEVED PRODUCT INFORMATION:
+
+{context}
+
+--------------------------------------------------
+
+INSTRUCTIONS:
+
+1. Understand the customer's requirements.
+
+2. Analyze the retrieved products.
+
+3. Select the best matching product.
+
+4. Extract the product specifications.
+
+5. Identify the quantity requested.
+
+6. Identify the maximum budget.
+
+7. Calculate:
+
+   Total Price =
+   Price Per Unit × Quantity
+
+8. Compare the total price with the customer's budget.
+
+9. If the total price is within the budget:
+
+   Approval Status: APPROVED
+
+10. If the total price exceeds the budget:
+
+   Approval Status: REJECTED
+
+11. Clearly format the response with:
+
+CUSTOMER DETAILS
+
+PRODUCT DETAILS
+
+PRICING DETAILS
+
+BUDGET ANALYSIS
+
+APPROVAL STATUS
+
+12. If there is not enough information in the retrieved
+documents, clearly say that.
+
+Return only the final quotation.
+"""
+
+    response = llm.invoke(
+        prompt
     )
 
-    workflow.add_node(
-        "approval",
-        approval_node
-    )
+    # =====================================================
+    # SAFELY EXTRACT RESPONSE CONTENT
+    # =====================================================
 
-    workflow.add_node(
-        "auto_approval",
-        auto_approval_node
-    )
+    if hasattr(
+        response,
+        "content"
+    ):
 
-    workflow.add_node(
-        "manual_approval",
-        manual_approval_node
-    )
+        answer = response.content
 
-    workflow.add_node(
-        "pdf_generation",
-        pdf_node
-    )
+    elif isinstance(
+        response,
+        dict
+    ):
 
-    workflow.add_edge(
-        START,
-        "requirements"
-    )
+        answer = response.get(
+            "content",
+            str(response)
+        )
 
-    workflow.add_edge(
-        "requirements",
-        "product_search"
-    )
+    else:
 
-    workflow.add_edge(
-        "product_search",
-        "pricing"
-    )
+        answer = str(response)
 
-    workflow.add_edge(
-        "pricing",
-        "quotation"
-    )
+    return {
+        "answer": answer
+    }
 
-    workflow.add_edge(
-        "quotation",
-        "approval"
-    )
 
-    workflow.add_conditional_edges(
-        "approval",
-        approval_decision,
-        {
-            "auto_approval": "auto_approval",
-            "manual_approval": "manual_approval"
-        }
-    )
+# =========================================================
+# CREATE LANGGRAPH WORKFLOW
+# =========================================================
 
-    workflow.add_edge(
-        "auto_approval",
-        "pdf_generation"
-    )
+workflow = StateGraph(
+    AgentState
+)
 
-    workflow.add_edge(
-        "manual_approval",
-        "pdf_generation"
-    )
 
-    workflow.add_edge(
-        "pdf_generation",
-        END
-    )
+# =========================================================
+# ADD NODES
+# =========================================================
 
-    return workflow.compile()
+workflow.add_node(
+    "retrieve",
+    retrieve_node
+)
+
+workflow.add_node(
+    "generate",
+    generate_node
+)
+
+
+# =========================================================
+# SET ENTRY POINT
+# =========================================================
+
+workflow.set_entry_point(
+    "retrieve"
+)
+
+
+# =========================================================
+# ADD EDGES
+# =========================================================
+
+workflow.add_edge(
+    "retrieve",
+    "generate"
+)
+
+workflow.add_edge(
+    "generate",
+    END
+)
+
+
+# =========================================================
+# COMPILE GRAPH
+# =========================================================
+
+quotation_graph = workflow.compile()
