@@ -1,4 +1,27 @@
+# Environment variables
 .env
+
+# Python virtual environments
 venv/
+.venv/
+
+# Python cache
 __pycache__/
+*.py[cod]
+
+# Generated quotation PDFs
 generated_quotations/
+
+# React / Vite
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Local Qdrant database
+qdrant_db/

@@ -1,274 +1,163 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from pathlib import Path
 
-from backend.agent import quotation_agent
+from backend.quotation_graph import quotation_graph
 
 
-# =========================================================
-# CREATE FASTAPI APP
-# =========================================================
+# ==============================
+# FASTAPI APP
+# ==============================
 
 app = FastAPI(
     title="Quotation Agent API",
-    version="1.0.0",
-    description="AI-powered quotation generation using LangGraph and RAG"
+    description="AI-Powered Product Quotation Generator",
+    version="1.0.0"
 )
 
 
-# =========================================================
-# REQUEST MODELS
-# =========================================================
+# ==============================
+# CORS CONFIGURATION
+# ==============================
 
-class QuotationRequest(
-    BaseModel
-):
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    customer_name: str
-    processor: str
-    ram: str
-    storage: str
-    quantity: int
-    max_budget: float
 
+# ==============================
+# REQUEST MODEL
+# ==============================
 
-class AgentRequest(
-    BaseModel
-):
-
+class QuotationRequest(BaseModel):
     query: str
 
 
-# =========================================================
-# HOME ROUTE
-# =========================================================
+# ==============================
+# HOME ENDPOINT
+# ==============================
 
 @app.get("/")
 def home():
-
     return {
-        "message": "Quotation Agent API is running"
+        "message": "Quotation Agent API is running successfully"
     }
 
 
-# =========================================================
+# ==============================
 # GENERATE QUOTATION
-# =========================================================
+# ==============================
 
 @app.post("/generate-quotation")
-def generate_quotation(
-    request: QuotationRequest
-):
+def generate_quotation(request: QuotationRequest):
+
+    print("\n=================================")
+    print("QUOTATION REQUEST RECEIVED")
+    print("=================================\n")
+
+    print("Customer Query:")
+    print(request.query)
 
     try:
 
-        # -------------------------------------------------
-        # SAMPLE PRODUCT DATA
-        # -------------------------------------------------
-
-        product = {
-            "supplier": "Dell Technologies",
-            "product": "Dell Inspiron 15",
-            "processor": "Intel Core i5",
-            "ram": "16GB",
-            "storage": "512GB SSD",
-            "price": 55000,
-            "price_per_unit": 55000,
-            "warranty": "2 Years",
-            "availability": "In Stock"
+        # Initial state for LangGraph
+        initial_state = {
+            "query": request.query
         }
 
+        # Run the quotation workflow
+        result = quotation_graph.invoke(initial_state)
 
-        # -------------------------------------------------
-        # CALCULATE PRICE
-        # -------------------------------------------------
+        # Check whether a product was found
+        if not result.get("selected_product"):
 
-        price_per_unit = product["price"]
+            raise HTTPException(
+                status_code=400,
+                detail="No matching product found for the requested requirements."
+            )
 
-        total_price = (
-            price_per_unit
-            * request.quantity
-        )
+        # Check approval status
+        approval_status = result.get("approval_status")
 
+        if approval_status != "APPROVED":
 
-        # -------------------------------------------------
-        # CHECK BUDGET
-        # -------------------------------------------------
+            return {
+                "status": "rejected",
+                "message": "Quotation could not be approved within the customer's budget.",
+                "customer_name": result.get("customer_name"),
+                "requirements": result.get("requirements"),
+                "selected_product": result.get("selected_product"),
+                "pricing_details": result.get("pricing_details"),
+                "approval_status": approval_status
+            }
 
-        if total_price <= request.max_budget:
-
-            approval_status = "APPROVED"
-
-        else:
-
-            approval_status = "REJECTED"
-
-
-        # -------------------------------------------------
-        # CREATE QUOTATION
-        # -------------------------------------------------
-
-        quotation = f"""
-========================================
-             QUOTATION
-========================================
-
-Customer Name: {request.customer_name}
-
-----------------------------------------
-PRODUCT DETAILS
-----------------------------------------
-
-Supplier: {product["supplier"]}
-
-Product: {product["product"]}
-
-Processor: {product["processor"]}
-
-RAM: {product["ram"]}
-
-Storage: {product["storage"]}
-
-Warranty: {product["warranty"]}
-
-Availability: {product["availability"]}
-
-
-----------------------------------------
-PRICING DETAILS
-----------------------------------------
-
-Price Per Unit: ₹{price_per_unit}
-
-Quantity: {request.quantity}
-
-Total Price: ₹{total_price}
-
-Maximum Budget: ₹{request.max_budget}
-
-
-----------------------------------------
-STATUS
-----------------------------------------
-
-Approval Status: {approval_status}
-
-========================================
-
-Thank you for choosing our services.
-"""
-
-
+        # Successful quotation
         return {
+            "status": "success",
 
-            "customer_name":
-                request.customer_name,
+            "customer_name": result.get("customer_name"),
 
-            "selected_product":
-                product,
+            "requirements": result.get("requirements"),
 
-            "pricing_details": {
+            "selected_product": result.get("selected_product"),
 
-                "price_per_unit":
-                    price_per_unit,
+            "pricing_details": result.get("pricing_details"),
 
-                "quantity":
-                    request.quantity,
+            "quotation": result.get("quotation"),
 
-                "total_price":
-                    total_price,
+            "approval_status": approval_status,
 
-                "max_budget":
-                    request.max_budget
-            },
-
-            "quotation":
-                quotation,
-
-            "approval_status":
-                approval_status
+            "pdf_path": result.get("pdf_path")
         }
 
+    except HTTPException:
+        raise
 
     except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-
-# =========================================================
-# AGENT QUOTATION
-# =========================================================
-
-@app.post("/agent-quotation")
-def agent_quotation(
-    request: AgentRequest
-):
-
-    try:
 
         print("\n=================================")
-        print("AGENT RECEIVED QUERY")
+        print("QUOTATION ERROR")
         print("=================================\n")
 
-        print(request.query)
-
-
-        # -----------------------------------------------
-        # RUN LANGGRAPH
-        # -----------------------------------------------
-
-        result = quotation_graph.invoke(
-            {
-                "query":
-                    request.query,
-
-                "documents":
-                    [],
-
-                "context":
-                    "",
-
-                "answer":
-                    ""
-            }
-        )
-
-
-        # -----------------------------------------------
-        # RETURN RESPONSE
-        # -----------------------------------------------
-
-        return {
-
-            "query":
-                request.query,
-
-            "response":
-                result.get(
-                    "answer",
-                    "No response generated."
-                ),
-
-            "retrieved_documents":
-                len(
-                    result.get(
-                        "documents",
-                        []
-                    )
-                )
-        }
-
-
-    except Exception as e:
-
-        print(
-            "\nAGENT ERROR:",
-            str(e)
-        )
+        print(str(e))
 
         raise HTTPException(
             status_code=500,
             detail=str(e)
         )
+
+
+# ==============================
+# DOWNLOAD QUOTATION PDF
+# ==============================
+
+@app.get("/download-quotation/{quotation_number}")
+def download_quotation(quotation_number: str):
+
+    pdf_folder = Path("generated_quotations")
+
+    pdf_file = pdf_folder / f"{quotation_number}.pdf"
+
+    if not pdf_file.exists():
+
+        raise HTTPException(
+            status_code=404,
+            detail="Quotation PDF not found"
+        )
+
+    return FileResponse(
+        path=pdf_file,
+        media_type="application/pdf",
+        filename=f"{quotation_number}.pdf"
+    )

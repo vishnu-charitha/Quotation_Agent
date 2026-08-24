@@ -1,10 +1,20 @@
 from datetime import datetime, timedelta
+from pathlib import Path
 
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas
+
+
+# ==========================================
+# GENERATE QUOTATION DATA
+# ==========================================
 
 def generate_quotation(
     customer_name,
     selected_product,
     pricing_details,
+    approval_status,
     validity_days=7
 ):
 
@@ -22,7 +32,8 @@ def generate_quotation(
 
     quotation = {
 
-        "quotation_number": quotation_number,
+        "quotation_number":
+            quotation_number,
 
         "quotation_date":
             quotation_date.strftime("%Y-%m-%d"),
@@ -30,7 +41,8 @@ def generate_quotation(
         "valid_until":
             valid_until.strftime("%Y-%m-%d"),
 
-        "customer_name": customer_name,
+        "customer_name":
+            customer_name,
 
         "product": {
 
@@ -59,168 +71,181 @@ def generate_quotation(
                 selected_product["warranty"]
         },
 
-        "pricing": pricing_details,
+        "pricing":
+            pricing_details,
 
-        "status": "Generated"
+        "status":
+            "Generated",
+
+        "approval_status":
+            approval_status
     }
 
     return quotation
 
 
-def generate_quotation_pdf(
-    quotation,
-    pricing_details
-):
+# ==========================================
+# GENERATE QUOTATION PDF
+# ==========================================
 
-    import os
-    from reportlab.lib.pagesizes import A4
-    from reportlab.pdfgen import canvas
+def generate_quotation_pdf(quotation):
 
-    os.makedirs(
-        "generated_quotations",
+    # Project root directory
+
+    BASE_DIR = Path(__file__).resolve().parents[2]
+
+    # Create generated_quotations folder
+
+    output_dir = (
+        BASE_DIR / "generated_quotations"
+    )
+
+    output_dir.mkdir(
         exist_ok=True
     )
 
-    quotation_number = quotation["quotation_number"]
+    # PDF file path
 
-    file_path = (
-        f"generated_quotations/{quotation_number}.pdf"
+    quotation_number = (
+        quotation["quotation_number"]
     )
 
+    file_path = (
+        output_dir
+        / f"{quotation_number}.pdf"
+    )
+
+    # Create PDF
+
     pdf = canvas.Canvas(
-        file_path,
+        str(file_path),
         pagesize=A4
     )
 
     width, height = A4
 
-    y = height - 60
+    y = height - 25 * mm
+
+
+    # ==========================================
+    # TITLE
+    # ==========================================
 
     pdf.setFont(
         "Helvetica-Bold",
-        18
+        20
     )
 
-    pdf.drawString(
-        200,
+    pdf.drawCentredString(
+        width / 2,
         y,
         "QUOTATION"
     )
 
-    y -= 50
+    y -= 20 * mm
+
+
+    # ==========================================
+    # QUOTATION INFORMATION
+    # ==========================================
 
     pdf.setFont(
-        "Helvetica",
-        12
+        "Helvetica-Bold",
+        11
     )
 
     pdf.drawString(
-        50,
+        20 * mm,
         y,
         f"Quotation Number: {quotation['quotation_number']}"
     )
 
-    y -= 25
+    y -= 8 * mm
 
     pdf.drawString(
-        50,
-        y,
-        f"Customer: {quotation['customer_name']}"
-    )
-
-    y -= 25
-
-    pdf.drawString(
-        50,
+        20 * mm,
         y,
         f"Quotation Date: {quotation['quotation_date']}"
     )
 
-    y -= 25
+    y -= 8 * mm
 
     pdf.drawString(
-        50,
+        20 * mm,
         y,
         f"Valid Until: {quotation['valid_until']}"
     )
 
-    y -= 50
+    y -= 8 * mm
+
+    pdf.drawString(
+        20 * mm,
+        y,
+        f"Customer: {quotation['customer_name']}"
+    )
+
+    y -= 15 * mm
+
+
+    # ==========================================
+    # PRODUCT DETAILS
+    # ==========================================
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+    pdf.drawString(
+        20 * mm,
+        y,
+        "PRODUCT DETAILS"
+    )
+
+    y -= 10 * mm
 
     product = quotation["product"]
 
     pdf.setFont(
-        "Helvetica-Bold",
-        14
-    )
-
-    pdf.drawString(
-        50,
-        y,
-        "Product Details"
-    )
-
-    y -= 30
-
-    pdf.setFont(
         "Helvetica",
-        12
+        11
     )
 
-    pdf.drawString(
-        50,
-        y,
-        f"Product ID: {product['product_id']}"
-    )
+    product_details = [
 
-    y -= 25
+        f"Product ID: {product['product_id']}",
 
-    pdf.drawString(
-        50,
-        y,
-        f"Brand: {product['brand']}"
-    )
+        f"Supplier: {product['supplier']}",
 
-    y -= 25
+        f"Brand: {product['brand']}",
 
-    pdf.drawString(
-        50,
-        y,
-        f"Model: {product['model']}"
-    )
+        f"Model: {product['model']}",
 
-    y -= 25
+        f"Processor: {product['processor']}",
 
-    pdf.drawString(
-        50,
-        y,
-        f"Processor: {product['processor']}"
-    )
+        f"RAM: {product['ram']}",
 
-    y -= 25
+        f"Storage: {product['storage']}",
 
-    pdf.drawString(
-        50,
-        y,
-        f"RAM: {product['ram']}"
-    )
-
-    y -= 25
-
-    pdf.drawString(
-        50,
-        y,
-        f"Storage: {product['storage']}"
-    )
-
-    y -= 25
-
-    pdf.drawString(
-        50,
-        y,
         f"Warranty: {product['warranty']}"
-    )
+    ]
 
-    y -= 50
+    for detail in product_details:
+
+        pdf.drawString(
+            20 * mm,
+            y,
+            detail
+        )
+
+        y -= 8 * mm
+
+
+    # ==========================================
+    # PRICING DETAILS
+    # ==========================================
+
+    y -= 5 * mm
 
     pdf.setFont(
         "Helvetica-Bold",
@@ -228,49 +253,69 @@ def generate_quotation_pdf(
     )
 
     pdf.drawString(
-        50,
+        20 * mm,
         y,
-        "Pricing Details"
+        "PRICING DETAILS"
     )
 
-    y -= 30
+    y -= 10 * mm
+
+    pricing = quotation["pricing"]
 
     pdf.setFont(
         "Helvetica",
-        12
+        11
     )
 
-    pdf.drawString(
-        50,
-        y,
-        f"Quantity: {pricing_details['quantity']}"
-    )
+    pricing_details = [
 
-    y -= 25
+        (
+            "Supplier Price Per Unit: "
+            f"Rs. {pricing['supplier_price_per_unit']:,.2f}"
+        ),
 
-    pdf.drawString(
-        50,
-        y,
-        f"Price Per Unit: Rs.{pricing_details['selling_price_per_unit']}"
-    )
+        (
+            f"Quantity: "
+            f"{pricing['quantity']}"
+        ),
 
-    y -= 25
+        (
+            "Profit Margin: "
+            f"{pricing['profit_margin_percent']}%"
+        ),
 
-    pdf.drawString(
-        50,
-        y,
-        f"Subtotal: Rs.{pricing_details['subtotal']}"
-    )
+        (
+            "Selling Price Per Unit: "
+            f"Rs. {pricing['selling_price_per_unit']:,.2f}"
+        ),
 
-    y -= 25
+        (
+            f"Subtotal: "
+            f"Rs. {pricing['subtotal']:,.2f}"
+        ),
 
-    pdf.drawString(
-        50,
-        y,
-        f"GST: Rs.{pricing_details['gst_amount']}"
-    )
+        (
+            f"GST ({pricing['gst_rate']}%): "
+            f"Rs. {pricing['gst_amount']:,.2f}"
+        )
+    ]
 
-    y -= 30
+    for detail in pricing_details:
+
+        pdf.drawString(
+            20 * mm,
+            y,
+            detail
+        )
+
+        y -= 8 * mm
+
+
+    # ==========================================
+    # FINAL TOTAL
+    # ==========================================
+
+    y -= 5 * mm
 
     pdf.setFont(
         "Helvetica-Bold",
@@ -278,11 +323,56 @@ def generate_quotation_pdf(
     )
 
     pdf.drawString(
-        50,
+        20 * mm,
         y,
-        f"FINAL TOTAL: Rs.{pricing_details['final_total']}"
+        (
+            "FINAL TOTAL: "
+            f"Rs. {pricing['final_total']:,.2f}"
+        )
     )
+
+    y -= 15 * mm
+
+
+    # ==========================================
+    # APPROVAL STATUS
+    # ==========================================
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+    pdf.drawString(
+        20 * mm,
+        y,
+        (
+            "APPROVAL STATUS: "
+            f"{quotation['approval_status']}"
+        )
+    )
+
+
+    # ==========================================
+    # FOOTER
+    # ==========================================
+
+    pdf.setFont(
+        "Helvetica",
+        9
+    )
+
+    pdf.drawCentredString(
+        width / 2,
+        15 * mm,
+        "Thank you for your business."
+    )
+
+
+    # ==========================================
+    # SAVE PDF
+    # ==========================================
 
     pdf.save()
 
-    return file_path
+    return str(file_path)

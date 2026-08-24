@@ -1,10 +1,53 @@
-from langchain_huggingface import HuggingFaceEmbeddings
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 
-def get_embeddings():
-    return HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+# ==========================================
+# LOAD ENVIRONMENT VARIABLES
+# ==========================================
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+load_dotenv(
+    BASE_DIR / ".env"
+)
+
+
+# ==========================================
+# GET GEMINI API KEY
+# ==========================================
+
+GEMINI_API_KEY = os.getenv(
+    "GEMINI_API_KEY"
+)
+
+
+if not GEMINI_API_KEY:
+
+    raise ValueError(
+        "GEMINI_API_KEY is missing in the .env file"
     )
 
 
-embeddings = get_embeddings()
+# ==========================================
+# CREATE EMBEDDING MODEL
+# ==========================================
+
+def get_embeddings():
+
+    print(
+        "\nInitializing Gemini Embedding Model..."
+    )
+
+    embeddings = GoogleGenerativeAIEmbeddings(
+
+        model="models/gemini-embedding-001",
+
+        google_api_key=GEMINI_API_KEY
+
+    )
+
+    return embeddings

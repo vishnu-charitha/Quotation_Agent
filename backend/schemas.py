@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
 
-
 class QuotationRequest(BaseModel):
     customer_name: str
     processor: str

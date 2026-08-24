@@ -3,16 +3,19 @@ from backend.tools.quotation_generator import generate_quotation
 
 def quotation_node(state):
 
-    print("\n--- QUOTATION NODE ---")
+    print("\n==============================")
+    print("QUOTATION NODE")
+    print("==============================")
 
     quotation = generate_quotation(
         customer_name=state["customer_name"],
         selected_product=state["selected_product"],
         pricing_details=state["pricing_details"],
+        approval_status=state["approval_status"],
         validity_days=7
     )
 
-    print("\nQuotation Generated:")
+    print("\nQuotation Generated Successfully")
 
     print(
         f"Quotation Number: "
@@ -25,8 +28,8 @@ def quotation_node(state):
     )
 
     print(
-        f"Status: "
-        f"{quotation['status']}"
+        f"Approval Status: "
+        f"{quotation['approval_status']}"
     )
 
     return {

@@ -1,22 +1,27 @@
-from backend.tools.quotation_generator import generate_quotation_pdf
+from backend.tools.quotation_generator import (
+    generate_quotation_pdf
+)
 
 
 def pdf_node(state):
 
-    print("\n--- PDF GENERATION NODE ---")
+    print("\n==============================")
+    print("PDF GENERATION NODE")
+    print("==============================")
 
     quotation = state["quotation"]
 
-    pricing_details = state["pricing_details"]
-
     pdf_path = generate_quotation_pdf(
-        quotation,
-        pricing_details
+        quotation
     )
 
-    print("\nPDF Generated Successfully:")
+    print(
+        "\nPDF Generated Successfully"
+    )
 
-    print(pdf_path)
+    print(
+        f"PDF Path: {pdf_path}"
+    )
 
     return {
         "pdf_path": pdf_path

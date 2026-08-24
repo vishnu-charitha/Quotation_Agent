@@ -1,6 +1,11 @@
-def search_suppliers(processor, ram, storage):
+def search_suppliers(
+    processor,
+    ram,
+    storage
+):
 
     suppliers = [
+
         {
             "product_id": "L001",
             "supplier": "Tech Supplier A",
@@ -10,8 +15,10 @@ def search_suppliers(processor, ram, storage):
             "ram": "16GB",
             "storage": "512GB SSD",
             "supplier_price": 50000,
-            "warranty": "1 Year"
+            "warranty": "1 Year",
+            "available_quantity": 50
         },
+
         {
             "product_id": "L002",
             "supplier": "Tech Supplier B",
@@ -21,8 +28,10 @@ def search_suppliers(processor, ram, storage):
             "ram": "16GB",
             "storage": "512GB SSD",
             "supplier_price": 52000,
-            "warranty": "1 Year"
+            "warranty": "1 Year",
+            "available_quantity": 30
         },
+
         {
             "product_id": "L003",
             "supplier": "Tech Supplier C",
@@ -32,7 +41,8 @@ def search_suppliers(processor, ram, storage):
             "ram": "16GB",
             "storage": "512GB SSD",
             "supplier_price": 51000,
-            "warranty": "1 Year"
+            "warranty": "1 Year",
+            "available_quantity": 20
         }
     ]
 
@@ -41,10 +51,24 @@ def search_suppliers(processor, ram, storage):
     for product in suppliers:
 
         if (
-            processor.lower() in product["processor"].lower()
-            and ram.lower() == product["ram"].lower()
-            and storage.lower() == product["storage"].lower()
+
+            processor.lower()
+            in product["processor"].lower()
+
+            and
+
+            ram.lower()
+            == product["ram"].lower()
+
+            and
+
+            storage.lower()
+            == product["storage"].lower()
+
         ):
-            matching_products.append(product)
+
+            matching_products.append(
+                product
+            )
 
     return matching_products

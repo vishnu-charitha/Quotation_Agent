@@ -1,35 +1,110 @@
 def approval_node(state):
 
-    print("\n--- APPROVAL NODE ---")
+    print("\n==============================")
+    print("APPROVAL NODE")
+    print("==============================")
 
-    quotation = state["quotation"]
 
-    pricing_details = state["pricing_details"]
+    # -----------------------------------------------------
+    # CHECK PREVIOUS REJECTION
+    # -----------------------------------------------------
 
-    final_total = pricing_details["final_total"]
-
-    print("\nQuotation ready for approval:")
-
-    print(
-        f"Quotation Number: "
-        f"{quotation['quotation_number']}"
+    existing_status = state.get(
+        "approval_status"
     )
 
-    print(
-        f"Customer: "
-        f"{quotation['customer_name']}"
+
+    if existing_status == "REJECTED":
+
+        print(
+            "\nRequest already rejected."
+        )
+
+        print(
+            f"Reason: "
+            f"{state.get('rejection_reason')}"
+        )
+
+
+        return {
+
+            "approval_status":
+                "REJECTED"
+
+        }
+
+
+    # -----------------------------------------------------
+    # GET DATA
+    # -----------------------------------------------------
+
+    pricing_details = state[
+        "pricing_details"
+    ]
+
+
+    requirements = state[
+        "requirements"
+    ]
+
+
+    final_total = float(
+
+        pricing_details[
+            "final_total"
+        ]
+
     )
 
-    print(
-        f"Final Total: ₹{final_total}"
+
+    max_budget = float(
+
+        requirements[
+            "max_budget"
+        ]
+
     )
 
-    # Example approval rule
-    if final_total <= 1000000:
-        approval_status = "approved"
+
+    print(
+        f"\nFinal Total: "
+        f"{final_total}"
+    )
+
+
+    print(
+        f"Maximum Budget: "
+        f"{max_budget}"
+    )
+
+
+    # -----------------------------------------------------
+    # APPROVAL LOGIC
+    # -----------------------------------------------------
+
+    if final_total <= max_budget:
+
+        approval_status = (
+            "APPROVED"
+        )
+
+
     else:
-        approval_status = "pending_manual_approval"
+
+        approval_status = (
+            "REJECTED"
+        )
+
+
+    print(
+        f"\nApproval Status: "
+        f"{approval_status}"
+    )
+
 
     return {
-        "approval_status": approval_status
+
+        "approval_status":
+            approval_status
+
     }

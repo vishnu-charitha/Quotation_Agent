@@ -1,70 +1,6 @@
-import os
-from pathlib import Path
 from typing import List, Dict, Any
 
-from dotenv import load_dotenv
-from qdrant_client import QdrantClient
-from sentence_transformers import SentenceTransformer
-
-
-# =========================================================
-# LOAD ENVIRONMENT VARIABLES
-# =========================================================
-
-BASE_DIR = Path(__file__).resolve().parents[2]
-
-load_dotenv(BASE_DIR / ".env")
-
-
-# =========================================================
-# CONFIGURATION
-# =========================================================
-
-QDRANT_URL = os.getenv("QDRANT_URL")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-
-COLLECTION_NAME = os.getenv(
-    "QDRANT_COLLECTION_NAME",
-    "quotation_documents"
-)
-
-EMBEDDING_MODEL_NAME = os.getenv(
-    "EMBEDDING_MODEL",
-    "all-MiniLM-L6-v2"
-)
-
-
-# =========================================================
-# LOAD EMBEDDING MODEL
-# =========================================================
-
-print("Loading embedding model...")
-
-embedding_model = SentenceTransformer(
-    EMBEDDING_MODEL_NAME
-)
-
-
-# =========================================================
-# CREATE QDRANT CLIENT
-# =========================================================
-
-def get_qdrant_client():
-
-    print("Connecting to Qdrant...")
-
-    if not QDRANT_URL:
-        raise ValueError(
-            "QDRANT_URL is missing in the .env file"
-        )
-
-    client = QdrantClient(
-        url=QDRANT_URL,
-        api_key=QDRANT_API_KEY,
-        timeout=60
-    )
-
-    return client
+from backend.rag.vector_store import get_vector_store
 
 
 # =========================================================
@@ -76,67 +12,56 @@ def retrieve_documents(
     limit: int = 3
 ) -> List[Dict[str, Any]]:
 
-    print("\nRetrieving relevant documents...")
+    print("\n==============================")
+    print("RAG RETRIEVER")
+    print("==============================")
 
-    print("\nGenerating query embedding...")
+    print(f"\nQuery:\n{query}")
 
-    query_vector = embedding_model.encode(
-        query
-    ).tolist()
 
-    print(
-        f"Query vector size: {len(query_vector)}"
+    # -----------------------------------------------------
+    # LOAD VECTOR STORE
+    # -----------------------------------------------------
+
+    vector_store = get_vector_store()
+
+
+    print("\nSearching Qdrant Vector Database...")
+
+
+    # -----------------------------------------------------
+    # SIMILARITY SEARCH
+    # -----------------------------------------------------
+
+    documents = vector_store.similarity_search_with_score(
+        query=query,
+        k=limit
     )
 
-    client = get_qdrant_client()
 
-    print("\nSearching Qdrant...")
-
-    try:
-
-        search_result = client.query_points(
-            collection_name=COLLECTION_NAME,
-            query=query_vector,
-            limit=limit,
-            with_payload=True
-        )
-
-        points = search_result.points
-
-    except AttributeError:
-
-        points = client.search(
-            collection_name=COLLECTION_NAME,
-            query_vector=query_vector,
-            limit=limit,
-            with_payload=True
-        )
+    # -----------------------------------------------------
+    # FORMAT RESULTS
+    # -----------------------------------------------------
 
     results = []
 
-    for point in points:
-
-        payload = point.payload or {}
-
-        content = (
-            payload.get("content")
-            or payload.get("text")
-            or payload.get("page_content")
-            or ""
-        )
-
-        metadata = payload.get(
-            "metadata",
-            {}
-        )
+    for document, score in documents:
 
         results.append(
             {
-                "content": content,
-                "metadata": metadata,
-                "score": float(point.score)
+                "content": document.page_content,
+
+                "metadata": document.metadata,
+
+                "score": float(score)
             }
         )
+
+
+    print(
+        f"\nRetrieved {len(results)} relevant documents."
+    )
+
 
     return results
 
@@ -150,15 +75,37 @@ def get_rag_context(
     limit: int = 3
 ) -> str:
 
+    print("\nCreating RAG Context...")
+
+
+    # -----------------------------------------------------
+    # RETRIEVE DOCUMENTS
+    # -----------------------------------------------------
+
     results = retrieve_documents(
         query=query,
         limit=limit
     )
 
+
+    # -----------------------------------------------------
+    # CHECK RESULTS
+    # -----------------------------------------------------
+
     if not results:
-        return "No relevant information found."
+
+        return (
+            "No relevant information found "
+            "in the knowledge base."
+        )
+
+
+    # -----------------------------------------------------
+    # BUILD CONTEXT
+    # -----------------------------------------------------
 
     context_parts = []
+
 
     for index, result in enumerate(
         results,
@@ -170,22 +117,76 @@ def get_rag_context(
             ""
         )
 
-        score = result.get(
-            "score",
-            0
+        metadata = result.get(
+            "metadata",
+            {}
         )
 
-        context_parts.append(
-            f"""
-DOCUMENT {index}
+        score = result.get(
+            "score",
+            0.0
+        )
 
-Similarity Score: {score}
+
+        context_parts.append(
+
+            f"""
+========================================
+DOCUMENT {index}
+========================================
+
+Similarity Score:
+{score}
 
 Content:
 {content}
+
+Metadata:
+{metadata}
 """
         )
 
-    return "\n\n".join(
+
+    # -----------------------------------------------------
+    # COMBINE CONTEXT
+    # -----------------------------------------------------
+
+    context = "\n\n".join(
         context_parts
     )
+
+
+    print("\nRAG Context Created Successfully.")
+
+
+    return context
+
+
+# =========================================================
+# TEST RETRIEVER
+# =========================================================
+
+if __name__ == "__main__":
+
+    print("\n========================================")
+    print("TESTING RAG RETRIEVER")
+    print("========================================")
+
+
+    test_query = (
+        "Find laptops with Intel Core i5, "
+        "16GB RAM and 512GB SSD"
+    )
+
+
+    context = get_rag_context(
+        query=test_query,
+        limit=3
+    )
+
+
+    print("\n========================================")
+    print("RETRIEVED RAG CONTEXT")
+    print("========================================")
+
+    print(context)
