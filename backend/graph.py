@@ -12,7 +12,9 @@ from backend.nodes.quotation_node import quotation_node
 # CREATE LANGGRAPH WORKFLOW
 # =========================================================
 
-workflow = StateGraph(QuotationState)
+workflow = StateGraph(
+    QuotationState
+)
 
 
 # =========================================================
@@ -50,7 +52,7 @@ workflow.set_entry_point(
 
 
 # =========================================================
-# ADD WORKFLOW EDGES
+# ADD EDGES
 # =========================================================
 
 workflow.add_edge(
@@ -58,15 +60,59 @@ workflow.add_edge(
     "product_search"
 )
 
-workflow.add_edge(
+
+# =========================================================
+# CONDITIONAL FUNCTION
+# =========================================================
+
+def check_product_found(state):
+
+    selected_product = state.get(
+        "selected_product"
+    )
+
+
+    if selected_product:
+
+        return "pricing"
+
+    else:
+
+        return "end"
+
+
+# =========================================================
+# CONDITIONAL ROUTING
+# =========================================================
+
+workflow.add_conditional_edges(
+
     "product_search",
-    "pricing"
+
+    check_product_found,
+
+    {
+
+        "pricing":
+            "pricing",
+
+        "end":
+            END
+
+    }
+
 )
+
+
+# =========================================================
+# CONTINUE WORKFLOW
+# =========================================================
 
 workflow.add_edge(
     "pricing",
     "quotation"
 )
+
 
 workflow.add_edge(
     "quotation",

@@ -5,9 +5,26 @@ def pricing_node(state):
     print("==============================")
 
 
-    selected_product = state[
+    # Get selected product safely
+    selected_product = state.get(
         "selected_product"
-    ]
+    )
+
+
+    # If no product was found
+    if not selected_product:
+
+        print(
+            "\nNo product selected. "
+            "Skipping pricing."
+        )
+
+        return {
+
+            "pricing_details": None,
+
+            "approval_status": "REJECTED"
+        }
 
 
     requirements = state[
@@ -29,7 +46,9 @@ def pricing_node(state):
     )
 
 
-    # Profit Margin
+    # ==============================
+    # PROFIT MARGIN
+    # ==============================
 
     profit_margin_percent = 10
 
@@ -51,7 +70,9 @@ def pricing_node(state):
     )
 
 
-    # Subtotal
+    # ==============================
+    # SUBTOTAL
+    # ==============================
 
     subtotal = (
 
@@ -61,7 +82,9 @@ def pricing_node(state):
     )
 
 
+    # ==============================
     # GST
+    # ==============================
 
     gst_rate = 18
 
@@ -75,7 +98,9 @@ def pricing_node(state):
     )
 
 
-    # Final Total
+    # ==============================
+    # FINAL TOTAL
+    # ==============================
 
     final_total = (
 
@@ -88,10 +113,7 @@ def pricing_node(state):
     pricing_details = {
 
         "supplier_price_per_unit":
-            round(
-                supplier_price,
-                2
-            ),
+            round(supplier_price, 2),
 
         "quantity":
             quantity,
@@ -112,25 +134,16 @@ def pricing_node(state):
             ),
 
         "subtotal":
-            round(
-                subtotal,
-                2
-            ),
+            round(subtotal, 2),
 
         "gst_rate":
             gst_rate,
 
         "gst_amount":
-            round(
-                gst_amount,
-                2
-            ),
+            round(gst_amount, 2),
 
         "final_total":
-            round(
-                final_total,
-                2
-            )
+            round(final_total, 2)
 
     }
 
