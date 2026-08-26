@@ -25,3 +25,6 @@ frontend/dist/
 
 # Local Qdrant database
 qdrant_db/
+# Generated files
+chunks.txt
+embeddings.json
